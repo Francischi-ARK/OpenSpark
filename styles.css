@@ -195,6 +195,132 @@ input {
   margin-bottom: 10px;
 }
 
+.breakdown-panel {
+  margin: 0 18px 14px;
+  padding: 14px 14px 10px;
+  border-radius: 20px;
+  background: rgba(247, 243, 232, 0.12);
+}
+
+.breakdown-panel .panel-head {
+  padding: 0 0 12px;
+}
+
+.breakdown-toggle {
+  display: inline-flex;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 999px;
+  background: rgba(8, 28, 24, 0.22);
+}
+
+.chip-btn {
+  border: 0;
+  border-radius: 999px;
+  padding: 6px 12px;
+  background: transparent;
+  color: rgba(246, 241, 228, 0.7);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.chip-btn.is-active {
+  background: rgba(247, 243, 232, 0.92);
+  color: var(--ink);
+}
+
+.breakdown-stack {
+  display: flex;
+  height: 12px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(8, 28, 24, 0.25);
+  margin-bottom: 12px;
+}
+
+.breakdown-seg {
+  min-width: 2px;
+}
+
+.breakdown-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.breakdown-item {
+  display: grid;
+  grid-template-columns: 10px 28px 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.breakdown-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+}
+
+.breakdown-icon {
+  font-size: 1rem;
+  text-align: center;
+}
+
+.breakdown-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.breakdown-main strong {
+  color: #f6f1e4;
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.breakdown-bar {
+  display: block;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(8, 28, 24, 0.28);
+  overflow: hidden;
+}
+
+.breakdown-bar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+}
+
+.breakdown-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  color: #f6f1e4;
+}
+
+.breakdown-meta strong {
+  font-family: var(--font-display);
+  font-size: 0.92rem;
+}
+
+.breakdown-meta small {
+  color: rgba(246, 241, 228, 0.65);
+  font-size: 0.72rem;
+}
+
+.breakdown-empty {
+  margin: 4px 0 8px;
+  color: rgba(246, 241, 228, 0.65);
+  font-size: 0.84rem;
+}
+
 .recent-row {
   display: flex;
   gap: 8px;

@@ -35,6 +35,12 @@
     emptyState: document.getElementById("emptyState"),
     recentPanel: document.getElementById("recentPanel"),
     recentRow: document.getElementById("recentRow"),
+    breakdownPanel: document.getElementById("breakdownPanel"),
+    breakdownStack: document.getElementById("breakdownStack"),
+    breakdownList: document.getElementById("breakdownList"),
+    breakdownEmpty: document.getElementById("breakdownEmpty"),
+    breakdownExpense: document.getElementById("breakdownExpense"),
+    breakdownIncome: document.getElementById("breakdownIncome"),
     openAdd: document.getElementById("openAdd"),
     addSheet: document.getElementById("addSheet"),
     txForm: document.getElementById("txForm"),
@@ -62,6 +68,17 @@
 
   const prefs = loadPrefs();
 
+  const PALETTE = [
+    "#12856a",
+    "#d4a15a",
+    "#b54a2f",
+    "#3f7cac",
+    "#6b8f71",
+    "#c079a4",
+    "#8c6b4f",
+    "#4d6b5f",
+  ];
+
   const state = {
     records: loadRecords(),
     viewYear: new Date().getFullYear(),
@@ -69,6 +86,7 @@
     type: prefs.lastType || "expense",
     categoryId: null,
     amountRaw: "",
+    breakdownKind: "expense",
   };
 
   state.categoryId = preferredCategory(state.type);
@@ -290,9 +308,91 @@
       .replaceAll('"', "&quot;");
   }
 
+  function categoryBreakdown(list, kind) {
+    const totals = new Map();
+    let sum = 0;
+    for (const r of list) {
+      if (r.type !== kind) continue;
+      totals.set(r.categoryId, (totals.get(r.categoryId) || 0) + r.amount);
+      sum += r.amount;
+    }
+    return [...totals.entries()]
+      .map(([categoryId, amount]) => {
+        const cat = findCategory(kind, categoryId);
+        return {
+          categoryId,
+          label: cat.label,
+          icon: cat.icon,
+          amount,
+          percent: sum > 0 ? (amount / sum) * 100 : 0,
+        };
+      })
+      .sort((a, b) => b.amount - a.amount)
+      .map((row, index) => ({
+        ...row,
+        color: PALETTE[index % PALETTE.length],
+      }));
+  }
+
+  function renderBreakdown(list) {
+    const kind = state.breakdownKind;
+    const rows = categoryBreakdown(list, kind);
+    els.breakdownExpense.classList.toggle("is-active", kind === "expense");
+    els.breakdownIncome.classList.toggle("is-active", kind === "income");
+    document.getElementById("breakdownHeading").textContent =
+      kind === "expense" ? "支出构成" : "收入构成";
+
+    els.breakdownStack.innerHTML = "";
+    els.breakdownList.innerHTML = "";
+
+    if (!list.length) {
+      els.breakdownPanel.hidden = true;
+      return;
+    }
+
+    els.breakdownPanel.hidden = false;
+
+    if (!rows.length) {
+      els.breakdownEmpty.hidden = false;
+      els.breakdownStack.hidden = true;
+      els.breakdownList.hidden = true;
+      return;
+    }
+
+    els.breakdownEmpty.hidden = true;
+    els.breakdownStack.hidden = false;
+    els.breakdownList.hidden = false;
+
+    for (const row of rows) {
+      const seg = document.createElement("span");
+      seg.className = "breakdown-seg";
+      seg.style.flex = `${row.amount} 0 0`;
+      seg.style.background = row.color;
+      seg.title = `${row.label} ${row.percent.toFixed(0)}%`;
+      els.breakdownStack.appendChild(seg);
+
+      const li = document.createElement("li");
+      li.className = "breakdown-item";
+      li.innerHTML = `
+        <span class="breakdown-swatch" style="background:${row.color}" aria-hidden="true"></span>
+        <span class="breakdown-icon" aria-hidden="true">${row.icon}</span>
+        <span class="breakdown-main">
+          <strong>${escapeHtml(row.label)}</strong>
+          <span class="breakdown-bar"><i style="width:${row.percent}%;background:${row.color}"></i></span>
+        </span>
+        <span class="breakdown-meta">
+          <strong>${money(row.amount)}</strong>
+          <small>${row.percent.toFixed(0)}%</small>
+        </span>
+      `;
+      els.breakdownList.appendChild(li);
+    }
+  }
+
   function renderAll() {
     const list = recordsInView();
     renderSummary(list);
+    renderBreakdown(list);
     renderList(list);
     renderRecent();
   }
@@ -651,6 +751,14 @@
   els.txForm.addEventListener("submit", onSubmit);
   els.monthPrev.addEventListener("click", () => shiftMonth(-1));
   els.monthNext.addEventListener("click", () => shiftMonth(1));
+  els.breakdownExpense.addEventListener("click", () => {
+    state.breakdownKind = "expense";
+    renderBreakdown(recordsInView());
+  });
+  els.breakdownIncome.addEventListener("click", () => {
+    state.breakdownKind = "income";
+    renderBreakdown(recordsInView());
+  });
   els.typeBtns.forEach((btn) => {
     btn.addEventListener("click", () => setType(btn.dataset.type));
   });

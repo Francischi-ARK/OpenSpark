@@ -56,6 +56,19 @@
         </div>
       </section>
 
+      <section class="panel breakdown-panel" id="breakdownPanel" aria-labelledby="breakdownHeading" hidden>
+        <div class="panel-head">
+          <h2 id="breakdownHeading">支出构成</h2>
+          <div class="breakdown-toggle" role="group" aria-label="构成类型">
+            <button type="button" class="chip-btn is-active" id="breakdownExpense" data-kind="expense">支出</button>
+            <button type="button" class="chip-btn" id="breakdownIncome" data-kind="income">收入</button>
+          </div>
+        </div>
+        <div class="breakdown-stack" id="breakdownStack" aria-hidden="true"></div>
+        <ul class="breakdown-list" id="breakdownList"></ul>
+        <p class="breakdown-empty" id="breakdownEmpty">本月还没有这类记录</p>
+      </section>
+
       <section class="panel recent-panel" id="recentPanel" aria-labelledby="recentHeading" hidden>
         <div class="panel-head">
           <h2 id="recentHeading">再记一笔</h2>
