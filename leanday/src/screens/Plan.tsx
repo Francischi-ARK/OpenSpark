@@ -1,4 +1,4 @@
-import { ACTIVITY_LABELS } from '../lib/calories'
+import { ACTIVITY_LABELS, EXERCISE_CREDIT_RATIO } from '../lib/calories'
 import { useApp } from '../state/AppState'
 
 export function PlanScreen() {
@@ -10,7 +10,9 @@ export function PlanScreen() {
   return (
     <div className="screen">
       <div className="brand-mark">减脂方案</div>
-      <p className="sub">基于 Mifflin-St Jeor + 活动系数，按你设定的每周减重速度生成。</p>
+      <p className="sub">
+        初始方案来自公式；连续记录体重趋势后，再按身体反馈微调。所有数字均为估算。
+      </p>
 
       <div
         className="panel"
@@ -22,14 +24,14 @@ export function PlanScreen() {
         }}
       >
         <div className="eyebrow" style={{ color: 'rgba(255,255,255,0.7)' }}>
-          每日热量预算
+          每日饮食预算（固定）
         </div>
         <div className="stat-num" style={{ color: 'white', fontSize: '2.6rem', marginTop: 6 }}>
           {plan.calorieBudget}
           <span style={{ fontSize: 16, fontWeight: 600, opacity: 0.8 }}> kcal</span>
         </div>
         <p style={{ marginTop: 8, opacity: 0.85 }}>
-          TDEE {plan.tdee} − 缺口 {plan.dailyDeficit} ≈ 今日上限
+          TDEE {plan.tdee} − 缺口 {plan.dailyDeficit} · 周预算 {plan.weeklyBudget} kcal
         </p>
       </div>
 
@@ -43,7 +45,7 @@ export function PlanScreen() {
       >
         {[
           { t: '基础代谢 BMR', v: `${plan.bmr} kcal` },
-          { t: '每日总消耗', v: `${plan.tdee} kcal` },
+          { t: '估算总消耗', v: `${plan.tdee} kcal` },
           { t: '蛋白质目标', v: `${plan.proteinG} g` },
           { t: '饮水目标', v: `${plan.waterMl} ml` },
           { t: '建议有氧', v: `${plan.suggestedWalkMin} 分钟` },
@@ -54,6 +56,14 @@ export function PlanScreen() {
             <div style={{ fontWeight: 800, marginTop: 6, fontSize: '1.05rem' }}>{x.v}</div>
           </div>
         ))}
+      </div>
+
+      <div className="panel" style={{ marginTop: 14 }}>
+        <div className="eyebrow">运动怎么算</div>
+        <p className="sub" style={{ marginTop: 8, fontSize: 0.95 }}>
+          饮食预算保持固定。运动热量先展示；额外消耗仅按 {Math.round(EXERCISE_CREDIT_RATIO * 100)}%
+          折算进「还能吃多少」，避免与活动系数重复计算。后续再升级为更动态的模型。
+        </p>
       </div>
 
       <div className="panel" style={{ marginTop: 14 }}>
@@ -71,13 +81,11 @@ export function PlanScreen() {
         </ul>
       </div>
 
-      <div className="panel" style={{ marginTop: 14 }}>
-        <div className="eyebrow">执行提示</div>
-        <p className="sub" style={{ marginTop: 8, fontSize: 0.95 }}>
-          优先吃够蛋白质，拍照后记得核对分量。缺口主要靠饮食控制，运动用来提高容错和体感。
-          体重每周同条件称 1–2 次，看趋势而不是单日波动。
+      {plan.warnings.slice(0, 3).map((w) => (
+        <p key={w} className="hint" style={{ marginTop: 10 }}>
+          {w}
         </p>
-      </div>
+      ))}
     </div>
   )
 }

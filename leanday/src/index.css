@@ -339,6 +339,31 @@ p {
   border: 1px dashed rgba(15, 118, 110, 0.35);
 }
 
+.option-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid var(--line);
+  font-weight: 600;
+  color: var(--ink);
+  text-align: left;
+}
+
+.option-chip.block {
+  width: 100%;
+}
+
+.option-chip.selected {
+  border-color: rgba(15, 118, 110, 0.45);
+  background: rgba(94, 234, 212, 0.28);
+  color: var(--teal-deep);
+  box-shadow: 0 0 0 2px rgba(94, 234, 212, 0.35);
+}
+
 @media (min-width: 860px) {
   body::before {
     content: '日减 LeanDay · MVP 预览';

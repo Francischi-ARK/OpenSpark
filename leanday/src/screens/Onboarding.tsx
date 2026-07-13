@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react'
 import {
   ACTIVITY_LABELS,
   buildPlan,
+  validateProfile,
   type ActivityLevel,
   type Sex,
   type UserProfile,
@@ -22,7 +23,9 @@ const defaultDraft: UserProfile = {
 export function Onboarding({ onDone }: { onDone: (p: UserProfile) => void }) {
   const [step, setStep] = useState(0)
   const [draft, setDraft] = useState<UserProfile>(defaultDraft)
+  const [acceptedDisclaimer, setAcceptedDisclaimer] = useState(false)
   const preview = useMemo(() => buildPlan(draft), [draft])
+  const validation = useMemo(() => validateProfile(draft), [draft])
 
   const set = <K extends keyof UserProfile>(key: K, value: UserProfile[K]) =>
     setDraft((d) => ({ ...d, [key]: value }))
@@ -38,8 +41,8 @@ export function Onboarding({ onDone }: { onDone: (p: UserProfile) => void }) {
         <p className="eyebrow" style={{ marginTop: 18 }}>
           LeanDay
         </p>
-        <h1 className="headline">拍一拍吃了什么，算清楚今天还能吃多少。</h1>
-        <p className="sub">先告诉我你的目标，我会给你每天的热量预算、饮水和运动建议。</p>
+        <h1 className="headline">拍一拍，算清楚今天还能吃多少——并告诉你下一顿怎么吃。</h1>
+        <p className="sub">先建立档案。所有热量与周期均为估算，仅供生活方式参考。</p>
       </motion.div>
 
       <motion.div
@@ -75,7 +78,7 @@ export function Onboarding({ onDone }: { onDone: (p: UserProfile) => void }) {
               </div>
             </div>
             <div className="field">
-              <label>年龄</label>
+              <label>年龄（需 ≥ 18）</label>
               <input
                 type="number"
                 value={draft.age}
@@ -140,7 +143,6 @@ export function Onboarding({ onDone }: { onDone: (p: UserProfile) => void }) {
                 <option value={0.25}>0.25 — 很稳</option>
                 <option value={0.5}>0.5 — 推荐</option>
                 <option value={0.75}>0.75 — 稍快</option>
-                <option value={1}>1.0 — 激进（需谨慎）</option>
               </select>
             </div>
 
@@ -154,15 +156,15 @@ export function Onboarding({ onDone }: { onDone: (p: UserProfile) => void }) {
               }}
             >
               <div className="eyebrow" style={{ color: 'rgba(255,255,255,0.7)' }}>
-                你的初步方案
+                初步方案（估算）
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12 }}>
                 <div>
-                  <div style={{ opacity: 0.75, fontSize: 12 }}>每日摄入</div>
+                  <div style={{ opacity: 0.75, fontSize: 12 }}>每日饮食预算</div>
                   <div className="stat-num" style={{ color: 'white', fontSize: '1.5rem' }}>
                     {preview.calorieBudget}
                   </div>
-                  <div style={{ fontSize: 12, opacity: 0.75 }}>kcal</div>
+                  <div style={{ fontSize: 12, opacity: 0.75 }}>kcal（固定，不完全加回运动）</div>
                 </div>
                 <div>
                   <div style={{ opacity: 0.75, fontSize: 12 }}>预计达成</div>
@@ -173,10 +175,33 @@ export function Onboarding({ onDone }: { onDone: (p: UserProfile) => void }) {
                 </div>
               </div>
               <p style={{ marginTop: 12, fontSize: 13, opacity: 0.85 }}>
-                建议步行约 {preview.suggestedWalkMin} 分钟/天 · 饮水 {preview.waterMl} ml · 蛋白质{' '}
-                {preview.proteinG} g
+                饮水 {preview.waterMl} ml · 蛋白质 {preview.proteinG} g · 建议步行{' '}
+                {preview.suggestedWalkMin} 分钟
               </p>
             </div>
+
+            {validation.errors.map((e) => (
+              <p key={e} style={{ color: 'var(--coral)', fontWeight: 600, fontSize: 13 }}>
+                {e}
+              </p>
+            ))}
+            {validation.warnings.slice(0, 2).map((w) => (
+              <p key={w} className="hint">
+                {w}
+              </p>
+            ))}
+
+            <label style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 13 }}>
+              <input
+                type="checkbox"
+                checked={acceptedDisclaimer}
+                onChange={(e) => setAcceptedDisclaimer(e.target.checked)}
+                style={{ marginTop: 3 }}
+              />
+              <span>
+                我理解日减是生活方式辅助，热量与识别均为估算；孕期、进食障碍史或特殊疾病应咨询专业人士。
+              </span>
+            </label>
           </div>
         )}
 
@@ -191,8 +216,10 @@ export function Onboarding({ onDone }: { onDone: (p: UserProfile) => void }) {
               type="button"
               className="btn btn-primary btn-block"
               onClick={() => setStep((s) => s + 1)}
-              disabled={step === 0 && !draft.name.trim()}
-              style={{ opacity: step === 0 && !draft.name.trim() ? 0.5 : 1 }}
+              disabled={step === 0 && (!draft.name.trim() || draft.age < 18)}
+              style={{
+                opacity: step === 0 && (!draft.name.trim() || draft.age < 18) ? 0.5 : 1,
+              }}
             >
               继续
             </button>
@@ -200,6 +227,8 @@ export function Onboarding({ onDone }: { onDone: (p: UserProfile) => void }) {
             <button
               type="button"
               className="btn btn-primary btn-block"
+              disabled={!validation.ok || !acceptedDisclaimer}
+              style={{ opacity: !validation.ok || !acceptedDisclaimer ? 0.5 : 1 }}
               onClick={() => onDone({ ...draft, name: draft.name.trim() || '朋友' })}
             >
               开始使用日减

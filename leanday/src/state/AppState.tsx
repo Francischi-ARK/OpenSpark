@@ -6,8 +6,20 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import { buildPlan, type UserProfile } from '../lib/calories'
-import { createManualFood, recognizeFoodFromImage, uid } from '../lib/foodMock'
+import {
+  buildPlan,
+  dietRemaining,
+  EXERCISE_CREDIT_RATIO,
+  type UserProfile,
+} from '../lib/calories'
+import {
+  cloneFood,
+  confirmDraftToFood,
+  createManualFood,
+  recognizeFoodFromImage,
+  type RecognitionDraft,
+  uid,
+} from '../lib/recognize'
 import {
   getOrCreateToday,
   loadDays,
@@ -20,9 +32,17 @@ import {
   saveWeights,
 } from '../lib/storage'
 import type { DayLog, ExerciseLog, FoodItem, WeightLog } from '../lib/types'
-import { remainingKcal, sumExerciseKcal, sumFoodKcal, sumWater } from '../lib/types'
+import { dateKeysForWeek, sumExerciseKcal, sumFoodKcal, sumWater } from '../lib/types'
+import { buildTonightSuggestion, sumProtein } from '../lib/tonight'
 
 export type Tab = 'today' | 'food' | 'plan' | 'me'
+
+export interface WeeklyStats {
+  budget: number
+  eaten: number
+  remaining: number
+  todayDelta: number
+}
 
 interface AppContextValue {
   onboarded: boolean
@@ -30,16 +50,24 @@ interface AppContextValue {
   completeOnboarding: (profile: UserProfile) => void
   updateProfile: (profile: UserProfile) => void
   day: DayLog
+  days: Record<string, DayLog>
   plan: ReturnType<typeof buildPlan> | null
   eaten: number
   burned: number
+  exerciseCredit: number
   waterMl: number
   remaining: number
+  weekly: WeeklyStats | null
+  proteinEaten: number
+  tonight: ReturnType<typeof buildTonightSuggestion> | null
+  recentFoods: FoodItem[]
   weights: WeightLog[]
   tab: Tab
   setTab: (t: Tab) => void
-  addFoodFromPhoto: (imageDataUrl: string) => Promise<FoodItem>
+  analyzePhoto: (imageDataUrl: string) => Promise<RecognitionDraft>
+  confirmFood: (draft: RecognitionDraft) => FoodItem
   addManualFood: (name: string, kcal: number) => void
+  reeatFood: (food: FoodItem) => void
   updateFood: (food: FoodItem) => void
   removeFood: (id: string) => void
   addWater: (ml: number) => void
@@ -65,8 +93,40 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const plan = useMemo(() => (profile ? buildPlan(profile) : null), [profile])
   const eaten = sumFoodKcal(day.foods)
   const burned = sumExerciseKcal(day.exercises)
+  const exerciseCredit = Math.round(burned * EXERCISE_CREDIT_RATIO)
   const waterMl = sumWater(day.water)
-  const remaining = plan ? remainingKcal(plan.calorieBudget, eaten, burned) : 0
+  const remaining = plan ? dietRemaining(plan.calorieBudget, eaten, burned) : 0
+  const proteinEaten = sumProtein(day.foods)
+  const tonight = plan ? buildTonightSuggestion(plan, remaining, proteinEaten) : null
+
+  const weekly = useMemo<WeeklyStats | null>(() => {
+    if (!plan) return null
+    const keys = dateKeysForWeek()
+    const weekEaten = keys.reduce((s, k) => s + sumFoodKcal(days[k]?.foods ?? []), 0)
+    const todayDelta = eaten - plan.calorieBudget
+    return {
+      budget: plan.weeklyBudget,
+      eaten: weekEaten,
+      remaining: plan.weeklyBudget - weekEaten,
+      todayDelta,
+    }
+  }, [plan, days, eaten])
+
+  const recentFoods = useMemo(() => {
+    const all = Object.values(days)
+      .flatMap((d) => d.foods)
+      .sort((a, b) => b.loggedAt.localeCompare(a.loggedAt))
+    const seen = new Set<string>()
+    const unique: FoodItem[] = []
+    for (const f of all) {
+      const key = `${f.name}|${f.kcal}`
+      if (seen.has(key)) continue
+      seen.add(key)
+      unique.push(f)
+      if (unique.length >= 8) break
+    }
+    return unique
+  }, [days])
 
   const persistDay = useCallback((next: DayLog) => {
     setDays((prev) => {
@@ -93,11 +153,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     saveProfile(p)
   }, [])
 
-  const addFoodFromPhoto = useCallback(
-    async (imageDataUrl: string) => {
-      const food = await recognizeFoodFromImage(imageDataUrl)
-      const next: DayLog = { ...day, foods: [...day.foods, food] }
-      persistDay(next)
+  const analyzePhoto = useCallback(async (imageDataUrl: string) => {
+    return recognizeFoodFromImage(imageDataUrl)
+  }, [])
+
+  const confirmFood = useCallback(
+    (draft: RecognitionDraft) => {
+      const food = confirmDraftToFood(draft)
+      persistDay({ ...day, foods: [...day.foods, food] })
       return food
     },
     [day, persistDay],
@@ -107,6 +170,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     (name: string, kcal: number) => {
       const food = createManualFood({ name, kcal })
       persistDay({ ...day, foods: [...day.foods, food] })
+    },
+    [day, persistDay],
+  )
+
+  const reeatFood = useCallback(
+    (food: FoodItem) => {
+      persistDay({ ...day, foods: [...day.foods, cloneFood(food)] })
     },
     [day, persistDay],
   )
@@ -183,16 +253,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
     completeOnboarding,
     updateProfile,
     day,
+    days,
     plan,
     eaten,
     burned,
+    exerciseCredit,
     waterMl,
     remaining,
+    weekly,
+    proteinEaten,
+    tonight,
+    recentFoods,
     weights,
     tab,
     setTab,
-    addFoodFromPhoto,
+    analyzePhoto,
+    confirmFood,
     addManualFood,
+    reeatFood,
     updateFood,
     removeFood,
     addWater,

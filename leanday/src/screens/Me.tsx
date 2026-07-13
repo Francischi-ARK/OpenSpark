@@ -1,18 +1,23 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useApp } from '../state/AppState'
+import { WeightTrend } from '../components/WeightTrend'
 
 export function MeScreen() {
-  const { profile, weights, addWeight, day, resetDemo, plan } = useApp()
+  const { profile, weights, addWeight, day, resetDemo, plan, burned, exerciseCredit } = useApp()
   const [kg, setKg] = useState(String(profile?.weightKg ?? ''))
 
-  if (!profile || !plan) return null
-
   const latest = weights[0]
+  const disclaimer = useMemo(
+    () => '日减提供生活方式估算，不构成医疗建议。特殊体质请咨询专业人士。',
+    [],
+  )
+
+  if (!profile || !plan) return null
 
   return (
     <div className="screen">
       <div className="brand-mark">我的</div>
-      <p className="sub">{profile.name} 的减脂日记 · OpenSpark / LeanDay MVP</p>
+      <p className="sub">{profile.name} 的减脂日记 · 看趋势，不看单日</p>
 
       <div className="panel" style={{ marginTop: 18 }}>
         <div className="row">
@@ -21,6 +26,9 @@ export function MeScreen() {
             <div className="stat-num">{latest?.kg ?? profile.weightKg} kg</div>
           </div>
           <div className="hint">目标 {profile.targetWeightKg} kg</div>
+        </div>
+        <div style={{ marginTop: 14 }}>
+          <WeightTrend weights={weights} />
         </div>
         <div className="field" style={{ marginTop: 14 }}>
           <label>记录今日体重</label>
@@ -49,19 +57,6 @@ export function MeScreen() {
       </div>
 
       <div className="panel" style={{ marginTop: 14 }}>
-        <div className="eyebrow">体重趋势</div>
-        <div className="list" style={{ marginTop: 10 }}>
-          {weights.length === 0 && <p className="hint">暂无记录</p>}
-          {weights.slice(0, 8).map((w) => (
-            <div key={w.id} className="row" style={{ padding: '8px 0', borderBottom: '1px solid var(--line)' }}>
-              <span className="hint">{new Date(w.loggedAt).toLocaleString()}</span>
-              <strong>{w.kg} kg</strong>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="panel" style={{ marginTop: 14 }}>
         <div className="eyebrow">今日运动</div>
         <div className="list" style={{ marginTop: 10 }}>
           {day.exercises.length === 0 && <p className="hint">还没有运动记录</p>}
@@ -69,30 +64,36 @@ export function MeScreen() {
             <div key={e.id} className="row" style={{ padding: '8px 0', borderBottom: '1px solid var(--line)' }}>
               <div>
                 <strong>{e.name}</strong>
-                <div className="hint">
-                  {e.minutes} 分钟 · {e.source === 'healthkit' ? 'HealthKit' : '手动'}
-                </div>
+                <div className="hint">{e.minutes} 分钟 · 展示 {e.kcal} kcal</div>
               </div>
-              <strong>{e.kcal} kcal</strong>
+              <strong>{e.kcal}</strong>
             </div>
           ))}
         </div>
+        {burned > 0 && (
+          <p className="hint" style={{ marginTop: 8 }}>
+            合计 {burned} kcal，饮食预算仅折算 +{exerciseCredit} kcal。
+          </p>
+        )}
       </div>
 
       <div className="healthkit-banner" style={{ marginTop: 14 }}>
         <div>
-          <strong>下一步：原生 iOS + HealthKit</strong>
+          <strong>路线图：先验证识图闭环，再接 HealthKit</strong>
           <p className="hint" style={{ marginTop: 6 }}>
-            读：活动能量、训练、步数、心率；写：饮水、体重、饮食热量。Apple Watch 数据经「健康」App
-            同步，无需先做独立 Watch App。
+            当前优先：真实识别 + 分量纠正 +「今晚怎么吃」。iOS / HealthKit 放在闭环跑通之后。
           </p>
         </div>
       </div>
 
+      <p className="hint" style={{ marginTop: 16 }}>
+        {disclaimer}
+      </p>
+
       <button
         type="button"
         className="btn btn-ghost btn-block"
-        style={{ marginTop: 18 }}
+        style={{ marginTop: 12 }}
         onClick={() => {
           if (confirm('清除本地演示数据并重新开始？')) resetDemo()
         }}
