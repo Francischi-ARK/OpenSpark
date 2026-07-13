@@ -1,11 +1,11 @@
-const CACHE = "openspark-ledger-v4";
+const CACHE = "openspark-ledger-v5";
 const ASSETS = [
   "./",
   "./index.html",
   "./styles.css",
   "./app.js",
   "./manifest.json",
-  "./openspark.png",
+  "./icon.svg",
 ];
 
 self.addEventListener("install", (event) => {

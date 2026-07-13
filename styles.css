@@ -88,6 +88,7 @@ input {
   border-radius: 12px;
   object-fit: cover;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  background: #0a4639;
 }
 
 .brand {
@@ -339,10 +340,26 @@ input {
 }
 
 .breakdown-item {
+  list-style: none;
+}
+
+.breakdown-hit {
   display: grid;
   grid-template-columns: 10px 28px 1fr auto;
   gap: 8px;
   align-items: center;
+  width: 100%;
+  border: 0;
+  border-radius: 14px;
+  padding: 8px 6px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.breakdown-item.is-active .breakdown-hit {
+  background: rgba(247, 243, 232, 0.14);
 }
 
 .breakdown-swatch {
@@ -352,8 +369,16 @@ input {
 }
 
 .breakdown-icon {
-  font-size: 1rem;
-  text-align: center;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  color: #f6f1e4;
+}
+
+.breakdown-icon .glyph {
+  width: 16px;
+  height: 16px;
 }
 
 .breakdown-main {
@@ -447,7 +472,12 @@ input {
   place-items: center;
   border-radius: 11px;
   background: rgba(247, 243, 232, 0.14);
-  font-size: 1rem;
+  color: #f6f1e4;
+}
+
+.recent-chip-icon .glyph {
+  width: 18px;
+  height: 18px;
 }
 
 .recent-chip-text {
@@ -528,7 +558,12 @@ input {
   place-items: center;
   border-radius: 14px;
   background: rgba(15, 107, 86, 0.12);
-  font-size: 1.2rem;
+  color: var(--accent-deep);
+}
+
+.tx-icon .glyph {
+  width: 22px;
+  height: 22px;
 }
 
 .tx-main {
@@ -788,8 +823,8 @@ input {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 10px 4px;
+  gap: 6px;
+  padding: 12px 4px 10px;
   border: 1px solid transparent;
   border-radius: 14px;
   background: rgba(20, 34, 30, 0.04);
@@ -797,8 +832,10 @@ input {
   cursor: pointer;
 }
 
-.cat-btn span:first-child {
-  font-size: 1.2rem;
+.cat-btn .cat-glyph {
+  width: 22px;
+  height: 22px;
+  color: var(--accent-deep);
 }
 
 .cat-btn span:last-child {
@@ -809,6 +846,15 @@ input {
 .cat-btn.is-active {
   border-color: rgba(15, 107, 86, 0.35);
   background: rgba(15, 107, 86, 0.12);
+}
+
+.cat-btn.is-active .cat-glyph {
+  color: var(--accent);
+}
+
+.glyph {
+  display: block;
+  flex: 0 0 auto;
 }
 
 .sheet-actions {

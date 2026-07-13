@@ -2,24 +2,46 @@
   const STORAGE_KEY = "openspark-ledger-v1";
   const PREFS_KEY = "openspark-ledger-prefs-v1";
 
+  const ICON_PATHS = {
+    food: '<path d="M8 3v7a2 2 0 0 0 2 2h0a2 2 0 0 0 2-2V3"/><path d="M10 12v9"/><path d="M16 5v3a3 3 0 0 0 3 3h0a3 3 0 0 0 3-3V5"/><path d="M19 11v10"/>',
+    transport: '<path d="M4 10h16l-1.2 7.2a2 2 0 0 1-2 1.8H7.2a2 2 0 0 1-2-1.8L4 10Z"/><path d="M6.5 10V7.5A3.5 3.5 0 0 1 10 4h4a3.5 3.5 0 0 1 3.5 3.5V10"/><circle cx="8" cy="16.5" r="1"/><circle cx="16" cy="16.5" r="1"/>',
+    shopping: '<path d="M6 8h12l-1 11H7L6 8Z"/><path d="M9 8a3 3 0 0 1 6 0"/><path d="M9 12h6"/>',
+    housing: '<path d="M4 11.5 12 5l8 6.5"/><path d="M6.5 10.5V19h11v-8.5"/><path d="M10 19v-5h4v5"/>',
+    fun: '<path d="M5 8.5h14v8H5z"/><path d="M9 8.5 7 5.5"/><path d="M15 8.5l2-3"/><circle cx="12" cy="12.5" r="2"/>',
+    health: '<path d="M12 21s-7-4.4-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 11c0 5.6-7 10-7 10Z"/><path d="M12 9v5"/><path d="M9.5 11.5h5"/>',
+    edu: '<path d="M3 9.5 12 5l9 4.5-9 4.5L3 9.5Z"/><path d="M7 12v4.5c0 .8 2.2 2.5 5 2.5s5-1.7 5-2.5V12"/><path d="M21 10v6"/>',
+    "other-out": '<circle cx="12" cy="12" r="8"/><path d="M12 8v8"/><path d="M8 12h8"/>',
+    salary: '<rect x="5" y="7" width="14" height="11" rx="2"/><path d="M5 11h14"/><path d="M9 15h2"/>',
+    bonus: '<path d="M12 4 13.8 9H19l-4.2 3.1L16.5 17 12 13.9 7.5 17l1.7-4.9L5 9h5.2L12 4Z"/>',
+    side: '<path d="M8 8h8v11H8z"/><path d="M10 8V6.5A2.5 2.5 0 0 1 12.5 4h0A2.5 2.5 0 0 1 15 6.5V8"/><path d="M8 13h8"/>',
+    invest: '<path d="M4 17 10 11l4 4 6-8"/><path d="M15 7h5v5"/>',
+    gift: '<path d="M5 11h14v9H5z"/><path d="M5 11V8.5A2.5 2.5 0 0 1 7.5 6h0c1.8 0 2.8 1.2 4.5 3 1.7-1.8 2.7-3 4.5-3A2.5 2.5 0 0 1 19 8.5V11"/><path d="M12 6v14"/>',
+    "other-in": '<circle cx="12" cy="12" r="8"/><path d="M12 8v8"/><path d="M8 12h8"/>',
+  };
+
+  function iconSvg(id, className = "glyph") {
+    const paths = ICON_PATHS[id] || ICON_PATHS["other-out"];
+    return `<svg class="${className}" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`;
+  }
+
   const CATEGORIES = {
     expense: [
-      { id: "food", label: "餐饮", icon: "🍜" },
-      { id: "transport", label: "交通", icon: "🚌" },
-      { id: "shopping", label: "购物", icon: "🛍️" },
-      { id: "housing", label: "居住", icon: "🏠" },
-      { id: "fun", label: "娱乐", icon: "🎬" },
-      { id: "health", label: "医疗", icon: "💊" },
-      { id: "edu", label: "学习", icon: "📚" },
-      { id: "other-out", label: "其他", icon: "✨" },
+      { id: "food", label: "餐饮" },
+      { id: "transport", label: "交通" },
+      { id: "shopping", label: "购物" },
+      { id: "housing", label: "居住" },
+      { id: "fun", label: "娱乐" },
+      { id: "health", label: "医疗" },
+      { id: "edu", label: "学习" },
+      { id: "other-out", label: "其他" },
     ],
     income: [
-      { id: "salary", label: "工资", icon: "💼" },
-      { id: "bonus", label: "奖金", icon: "🎁" },
-      { id: "side", label: "兼职", icon: "🛠️" },
-      { id: "invest", label: "理财", icon: "📈" },
-      { id: "gift", label: "红包", icon: "🧧" },
-      { id: "other-in", label: "其他", icon: "✨" },
+      { id: "salary", label: "工资" },
+      { id: "bonus", label: "奖金" },
+      { id: "side", label: "兼职" },
+      { id: "invest", label: "理财" },
+      { id: "gift", label: "红包" },
+      { id: "other-in", label: "其他" },
     ],
   };
 
@@ -302,7 +324,7 @@
     const cat = findCategory(state.filterType, state.filterCategoryId);
     const kind = state.filterType === "income" ? "收入" : "支出";
     els.filterBar.hidden = false;
-    els.filterChipText.textContent = `${kind} · ${cat.icon} ${cat.label}`;
+    els.filterChipText.textContent = `${kind} · ${cat.label}`;
   }
 
   function renderList(list) {
@@ -329,7 +351,7 @@
       btn.className = "tx-item";
       btn.dataset.id = r.id;
       btn.innerHTML = `
-        <span class="tx-icon" aria-hidden="true">${cat.icon}</span>
+        <span class="tx-icon" aria-hidden="true">${iconSvg(cat.id)}</span>
         <span class="tx-main">
           <p class="tx-title">${escapeHtml(r.note || cat.label)}</p>
           <p class="tx-sub">${r.date} · ${cat.label}</p>
@@ -358,7 +380,7 @@
       btn.type = "button";
       btn.className = "recent-chip";
       btn.innerHTML = `
-        <span class="recent-chip-icon" aria-hidden="true">${cat.icon}</span>
+        <span class="recent-chip-icon" aria-hidden="true">${iconSvg(cat.id)}</span>
         <span class="recent-chip-text">
           <strong>${escapeHtml(r.note || cat.label)}</strong>
           <small>${r.type === "income" ? "+" : "-"}${money(r.amount)}</small>
@@ -391,7 +413,6 @@
         return {
           categoryId,
           label: cat.label,
-          icon: cat.icon,
           amount,
           percent: sum > 0 ? (amount / sum) * 100 : 0,
         };
@@ -447,7 +468,7 @@
       li.innerHTML = `
         <button type="button" class="breakdown-hit" data-category="${row.categoryId}">
           <span class="breakdown-swatch" style="background:${row.color}" aria-hidden="true"></span>
-          <span class="breakdown-icon" aria-hidden="true">${row.icon}</span>
+          <span class="breakdown-icon" aria-hidden="true">${iconSvg(row.categoryId)}</span>
           <span class="breakdown-main">
             <strong>${escapeHtml(row.label)}</strong>
             <span class="breakdown-bar"><i style="width:${row.percent}%;background:${row.color}"></i></span>
@@ -500,7 +521,7 @@
       btn.type = "button";
       btn.className = `cat-btn${cat.id === state.categoryId ? " is-active" : ""}`;
       btn.dataset.id = cat.id;
-      btn.innerHTML = `<span>${cat.icon}</span><span>${cat.label}</span>`;
+      btn.innerHTML = `${iconSvg(cat.id, "glyph cat-glyph")}<span>${cat.label}</span>`;
       btn.addEventListener("click", () => {
         state.categoryId = cat.id;
         prefs.lastCategoryByType[state.type] = cat.id;
