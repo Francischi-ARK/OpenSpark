@@ -30,7 +30,19 @@
     monthBalance: document.getElementById("monthBalance"),
     monthIncome: document.getElementById("monthIncome"),
     monthExpense: document.getElementById("monthExpense"),
+    budgetBlock: document.getElementById("budgetBlock"),
+    budgetLabel: document.getElementById("budgetLabel"),
+    budgetFill: document.getElementById("budgetFill"),
+    budgetHint: document.getElementById("budgetHint"),
+    openBudget: document.getElementById("openBudget"),
+    budgetInput: document.getElementById("budgetInput"),
+    budgetFieldLabel: document.getElementById("budgetFieldLabel"),
+    saveBudget: document.getElementById("saveBudget"),
+    clearBudget: document.getElementById("clearBudget"),
     listMeta: document.getElementById("listMeta"),
+    filterBar: document.getElementById("filterBar"),
+    filterChip: document.getElementById("filterChip"),
+    filterChipText: document.getElementById("filterChipText"),
     txList: document.getElementById("txList"),
     emptyState: document.getElementById("emptyState"),
     recentPanel: document.getElementById("recentPanel"),
@@ -87,6 +99,8 @@
     categoryId: null,
     amountRaw: "",
     breakdownKind: "expense",
+    filterType: null,
+    filterCategoryId: null,
   };
 
   state.categoryId = preferredCategory(state.type);
@@ -105,14 +119,20 @@
   function loadPrefs() {
     try {
       const raw = localStorage.getItem(PREFS_KEY);
-      if (!raw) return { lastType: "expense", lastCategoryByType: {} };
+      if (!raw) {
+        return { lastType: "expense", lastCategoryByType: {}, monthlyBudgets: {} };
+      }
       const parsed = JSON.parse(raw);
       return {
         lastType: parsed.lastType === "income" ? "income" : "expense",
         lastCategoryByType: parsed.lastCategoryByType || {},
+        monthlyBudgets:
+          parsed.monthlyBudgets && typeof parsed.monthlyBudgets === "object"
+            ? parsed.monthlyBudgets
+            : {},
       };
     } catch {
-      return { lastType: "expense", lastCategoryByType: {} };
+      return { lastType: "expense", lastCategoryByType: {}, monthlyBudgets: {} };
     }
   }
 
@@ -245,14 +265,63 @@
     els.monthIncome.textContent = money(income);
     els.monthExpense.textContent = money(expense);
     els.monthLabel.textContent = `${state.viewYear}年${state.viewMonth + 1}月`;
-    els.listMeta.textContent = list.length ? `${list.length} 笔` : "暂无记录";
+
+    const key = currentMonthKey();
+    const budget = Number(prefs.monthlyBudgets[key]) || 0;
+    if (budget > 0) {
+      const ratio = Math.min(expense / budget, 1);
+      const over = expense > budget;
+      const left = budget - expense;
+      els.budgetBlock.hidden = false;
+      els.budgetLabel.textContent = `${money(expense)} / ${money(budget)}`;
+      els.budgetFill.style.width = `${(ratio * 100).toFixed(1)}%`;
+      els.budgetFill.classList.toggle("is-over", over);
+      els.budgetHint.textContent = over
+        ? `已超支 ${money(expense - budget)}`
+        : `还可以花 ${money(left)}`;
+      els.budgetHint.classList.toggle("is-over", over);
+      els.openBudget.textContent = "调整预算";
+    } else {
+      els.budgetBlock.hidden = true;
+      els.openBudget.textContent = "设置预算";
+    }
+  }
+
+  function filteredList(list) {
+    if (!state.filterType || !state.filterCategoryId) return list;
+    return list.filter(
+      (r) => r.type === state.filterType && r.categoryId === state.filterCategoryId
+    );
+  }
+
+  function renderFilterBar() {
+    if (!state.filterType || !state.filterCategoryId) {
+      els.filterBar.hidden = true;
+      return;
+    }
+    const cat = findCategory(state.filterType, state.filterCategoryId);
+    const kind = state.filterType === "income" ? "收入" : "支出";
+    els.filterBar.hidden = false;
+    els.filterChipText.textContent = `${kind} · ${cat.icon} ${cat.label}`;
   }
 
   function renderList(list) {
+    const shown = filteredList(list);
     els.txList.innerHTML = "";
-    els.emptyState.classList.toggle("hidden", list.length > 0);
+    els.emptyState.classList.toggle("hidden", shown.length > 0);
+    if (!list.length) {
+      els.emptyState.textContent = "还没有记账。点下方「记一笔」开始。";
+    } else if (!shown.length) {
+      els.emptyState.textContent = "这个分类本月没有流水。";
+    }
+    els.listMeta.textContent = state.filterCategoryId
+      ? `${shown.length} / ${list.length} 笔`
+      : list.length
+        ? `${list.length} 笔`
+        : "暂无记录";
+    renderFilterBar();
 
-    for (const r of list) {
+    for (const r of shown) {
       const cat = findCategory(r.type, r.categoryId);
       const li = document.createElement("li");
       const btn = document.createElement("button");
@@ -372,21 +441,44 @@
       els.breakdownStack.appendChild(seg);
 
       const li = document.createElement("li");
-      li.className = "breakdown-item";
+      const active =
+        state.filterType === kind && state.filterCategoryId === row.categoryId;
+      li.className = `breakdown-item${active ? " is-active" : ""}`;
       li.innerHTML = `
-        <span class="breakdown-swatch" style="background:${row.color}" aria-hidden="true"></span>
-        <span class="breakdown-icon" aria-hidden="true">${row.icon}</span>
-        <span class="breakdown-main">
-          <strong>${escapeHtml(row.label)}</strong>
-          <span class="breakdown-bar"><i style="width:${row.percent}%;background:${row.color}"></i></span>
-        </span>
-        <span class="breakdown-meta">
-          <strong>${money(row.amount)}</strong>
-          <small>${row.percent.toFixed(0)}%</small>
-        </span>
+        <button type="button" class="breakdown-hit" data-category="${row.categoryId}">
+          <span class="breakdown-swatch" style="background:${row.color}" aria-hidden="true"></span>
+          <span class="breakdown-icon" aria-hidden="true">${row.icon}</span>
+          <span class="breakdown-main">
+            <strong>${escapeHtml(row.label)}</strong>
+            <span class="breakdown-bar"><i style="width:${row.percent}%;background:${row.color}"></i></span>
+          </span>
+          <span class="breakdown-meta">
+            <strong>${money(row.amount)}</strong>
+            <small>${row.percent.toFixed(0)}%</small>
+          </span>
+        </button>
       `;
+      li.querySelector(".breakdown-hit").addEventListener("click", () => {
+        if (state.filterType === kind && state.filterCategoryId === row.categoryId) {
+          clearFilter();
+        } else {
+          state.filterType = kind;
+          state.filterCategoryId = row.categoryId;
+          renderAll();
+          document.getElementById("listHeading")?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        }
+      });
       els.breakdownList.appendChild(li);
     }
+  }
+
+  function clearFilter() {
+    state.filterType = null;
+    state.filterCategoryId = null;
+    renderAll();
   }
 
   function renderAll() {
@@ -546,7 +638,43 @@
     const d = new Date(state.viewYear, state.viewMonth + delta, 1);
     state.viewYear = d.getFullYear();
     state.viewMonth = d.getMonth();
-    renderAll();
+    clearFilter();
+  }
+
+  function openTools(focusBudget = false) {
+    const key = currentMonthKey();
+    const budget = prefs.monthlyBudgets[key];
+    els.budgetFieldLabel.textContent = `${state.viewYear}年${state.viewMonth + 1}月预算（元）`;
+    els.budgetInput.value = budget ? String(budget) : "";
+    setToolsStatus("");
+    openDialog(els.toolsSheet);
+    if (focusBudget) {
+      requestAnimationFrame(() => {
+        els.budgetInput.focus();
+        els.budgetInput.select();
+      });
+    }
+  }
+
+  function saveBudget() {
+    const amount = parseAmount(els.budgetInput.value);
+    if (amount == null) {
+      setToolsStatus("请输入有效预算金额", true);
+      els.budgetInput.focus();
+      return;
+    }
+    prefs.monthlyBudgets[currentMonthKey()] = amount;
+    savePrefs();
+    setToolsStatus(`已保存预算 ${money(amount)}`);
+    renderSummary(recordsInView());
+  }
+
+  function clearBudget() {
+    delete prefs.monthlyBudgets[currentMonthKey()];
+    savePrefs();
+    els.budgetInput.value = "";
+    setToolsStatus("已清除本月预算");
+    renderSummary(recordsInView());
   }
 
   function downloadBlob(filename, blob) {
@@ -751,6 +879,10 @@
   els.txForm.addEventListener("submit", onSubmit);
   els.monthPrev.addEventListener("click", () => shiftMonth(-1));
   els.monthNext.addEventListener("click", () => shiftMonth(1));
+  els.filterChip.addEventListener("click", clearFilter);
+  els.openBudget.addEventListener("click", () => openTools(true));
+  els.saveBudget.addEventListener("click", saveBudget);
+  els.clearBudget.addEventListener("click", clearBudget);
   els.breakdownExpense.addEventListener("click", () => {
     state.breakdownKind = "expense";
     renderBreakdown(recordsInView());
@@ -772,10 +904,7 @@
     if (event.target === els.addSheet) closeSheet();
   });
 
-  els.openTools.addEventListener("click", () => {
-    setToolsStatus("");
-    openDialog(els.toolsSheet);
-  });
+  els.openTools.addEventListener("click", () => openTools(false));
   els.closeTools.addEventListener("click", () => closeDialog(els.toolsSheet));
   els.toolsSheet.addEventListener("click", (event) => {
     if (event.target === els.toolsSheet) closeDialog(els.toolsSheet);

@@ -54,6 +54,17 @@
             <strong id="monthExpense">¥0.00</strong>
           </div>
         </div>
+        <div class="budget-block" id="budgetBlock" hidden>
+          <div class="budget-head">
+            <span>本月预算</span>
+            <strong id="budgetLabel">—</strong>
+          </div>
+          <div class="budget-track" aria-hidden="true">
+            <i id="budgetFill"></i>
+          </div>
+          <p class="budget-hint" id="budgetHint"></p>
+        </div>
+        <button type="button" class="budget-set-btn" id="openBudget">设置预算</button>
       </section>
 
       <section class="panel breakdown-panel" id="breakdownPanel" aria-labelledby="breakdownHeading" hidden>
@@ -81,6 +92,12 @@
         <div class="panel-head">
           <h2 id="listHeading">流水</h2>
           <p class="panel-meta" id="listMeta">暂无记录</p>
+        </div>
+        <div class="filter-bar" id="filterBar" hidden>
+          <button type="button" class="filter-chip" id="filterChip">
+            <span id="filterChipText">筛选中</span>
+            <span aria-hidden="true">×</span>
+          </button>
         </div>
         <ul class="tx-list" id="txList"></ul>
         <p class="empty" id="emptyState">还没有记账。点下方「记一笔」开始。</p>
@@ -149,7 +166,17 @@
     <dialog class="sheet tools-sheet" id="toolsSheet">
       <div class="sheet-inner">
         <div class="sheet-grab" aria-hidden="true"></div>
-        <h2>备份与恢复</h2>
+        <h2>设置与备份</h2>
+
+        <label class="field">
+          <span id="budgetFieldLabel">本月预算（元）</span>
+          <input id="budgetInput" type="text" inputmode="decimal" placeholder="例如 5000" autocomplete="off" />
+        </label>
+        <div class="tools-actions budget-actions">
+          <button type="button" class="primary" id="saveBudget">保存预算</button>
+          <button type="button" class="secondary" id="clearBudget">清除预算</button>
+        </div>
+
         <p class="tools-copy">数据保存在本机浏览器。换机或清缓存前请先导出。</p>
         <div class="tools-actions">
           <button type="button" class="secondary" id="exportJson">导出 JSON</button>

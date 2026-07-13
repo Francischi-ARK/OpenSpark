@@ -1,4 +1,4 @@
-const CACHE = "openspark-ledger-v3";
+const CACHE = "openspark-ledger-v4";
 const ASSETS = [
   "./",
   "./index.html",
