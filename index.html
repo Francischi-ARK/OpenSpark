@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#0f3d34" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="OpenSpark 记账" />
+    <meta name="description" content="OpenSpark 手机记账 — 本地保存，随时记录收支" />
+    <link rel="manifest" href="./manifest.json" />
+    <link rel="icon" type="image/png" href="./openspark.png" />
+    <link rel="apple-touch-icon" href="./openspark.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Sora:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <title>OpenSpark 记账</title>
+  </head>
+  <body>
+    <div class="atmosphere" aria-hidden="true"></div>
+
+    <header class="top">
+      <div class="brand-lockup">
+        <img class="brand-mark" src="./openspark.png" alt="" width="40" height="40" />
+        <div>
+          <p class="brand">OpenSpark</p>
+          <p class="brand-sub">记账</p>
+        </div>
+      </div>
+      <button type="button" class="ghost-btn" id="monthPrev" aria-label="上个月">‹</button>
+      <p class="month-label" id="monthLabel"></p>
+      <button type="button" class="ghost-btn" id="monthNext" aria-label="下个月">›</button>
+    </header>
+
+    <main>
+      <section class="summary" aria-labelledby="balanceHeading">
+        <p class="summary-kicker" id="balanceHeading">本月结余</p>
+        <p class="summary-balance" id="monthBalance">¥0.00</p>
+        <div class="summary-split">
+          <div>
+            <span>收入</span>
+            <strong id="monthIncome">¥0.00</strong>
+          </div>
+          <div>
+            <span>支出</span>
+            <strong id="monthExpense">¥0.00</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="listHeading">
+        <div class="panel-head">
+          <h2 id="listHeading">流水</h2>
+          <p class="panel-meta" id="listMeta">暂无记录</p>
+        </div>
+        <ul class="tx-list" id="txList"></ul>
+        <p class="empty" id="emptyState">还没有记账。点下方「记一笔」开始。</p>
+      </section>
+    </main>
+
+    <button type="button" class="fab" id="openAdd" aria-haspopup="dialog">
+      记一笔
+    </button>
+
+    <dialog class="sheet" id="addSheet">
+      <form method="dialog" id="txForm" class="sheet-inner">
+        <div class="sheet-grab" aria-hidden="true"></div>
+        <h2 id="sheetTitle">记一笔</h2>
+
+        <div class="type-toggle" role="group" aria-label="收支类型">
+          <button type="button" class="type-btn is-active" data-type="expense">支出</button>
+          <button type="button" class="type-btn" data-type="income">收入</button>
+        </div>
+
+        <label class="field">
+          <span>金额</span>
+          <input
+            id="amountInput"
+            name="amount"
+            type="text"
+            inputmode="decimal"
+            placeholder="0.00"
+            autocomplete="off"
+            required
+          />
+        </label>
+
+        <fieldset class="cats">
+          <legend>分类</legend>
+          <div class="cat-grid" id="catGrid"></div>
+        </fieldset>
+
+        <label class="field">
+          <span>备注</span>
+          <input id="noteInput" name="note" type="text" placeholder="可选" maxlength="40" />
+        </label>
+
+        <label class="field">
+          <span>日期</span>
+          <input id="dateInput" name="date" type="date" required />
+        </label>
+
+        <input type="hidden" id="editId" value="" />
+
+        <div class="sheet-actions">
+          <button type="button" class="secondary" id="cancelSheet">取消</button>
+          <button type="submit" class="primary" id="saveTx">保存</button>
+        </div>
+        <button type="button" class="danger hidden" id="deleteTx">删除这笔</button>
+      </form>
+    </dialog>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
