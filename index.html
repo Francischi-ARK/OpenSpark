@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#0f3d34" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="OpenSpark 记账" />
+    <meta name="description" content="OpenSpark 手机记账 — 本地保存，随时记录收支" />
+    <link rel="manifest" href="./manifest.json" />
+    <link rel="icon" type="image/svg+xml" href="./icon.svg" />
+    <link rel="apple-touch-icon" href="./icon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Sora:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <title>OpenSpark 记账</title>
+  </head>
+  <body>
+    <div class="atmosphere" aria-hidden="true"></div>
+
+    <header class="top">
+      <div class="brand-lockup">
+        <img class="brand-mark" src="./icon.svg" alt="" width="40" height="40" />
+        <div>
+          <p class="brand">OpenSpark</p>
+          <p class="brand-sub">记账</p>
+        </div>
+      </div>
+      <button type="button" class="ghost-btn" id="monthPrev" aria-label="上个月">‹</button>
+      <p class="month-label" id="monthLabel"></p>
+      <button type="button" class="ghost-btn" id="monthNext" aria-label="下个月">›</button>
+      <button type="button" class="ghost-btn tools-btn" id="openTools" aria-label="备份与工具" aria-haspopup="dialog">⋯</button>
+    </header>
+
+    <main>
+      <section class="summary" aria-labelledby="balanceHeading">
+        <p class="summary-kicker" id="balanceHeading">本月结余</p>
+        <p class="summary-balance" id="monthBalance">¥0.00</p>
+        <div class="summary-split">
+          <div>
+            <span>收入</span>
+            <strong id="monthIncome">¥0.00</strong>
+          </div>
+          <div>
+            <span>支出</span>
+            <strong id="monthExpense">¥0.00</strong>
+          </div>
+        </div>
+        <div class="budget-block" id="budgetBlock" hidden>
+          <div class="budget-head">
+            <span>本月预算</span>
+            <strong id="budgetLabel">—</strong>
+          </div>
+          <div class="budget-track" aria-hidden="true">
+            <i id="budgetFill"></i>
+          </div>
+          <p class="budget-hint" id="budgetHint"></p>
+        </div>
+        <button type="button" class="budget-set-btn" id="openBudget">设置预算</button>
+      </section>
+
+      <section class="panel breakdown-panel" id="breakdownPanel" aria-labelledby="breakdownHeading" hidden>
+        <div class="panel-head">
+          <h2 id="breakdownHeading">支出构成</h2>
+          <div class="breakdown-toggle" role="group" aria-label="构成类型">
+            <button type="button" class="chip-btn is-active" id="breakdownExpense" data-kind="expense">支出</button>
+            <button type="button" class="chip-btn" id="breakdownIncome" data-kind="income">收入</button>
+          </div>
+        </div>
+        <div class="breakdown-stack" id="breakdownStack" aria-hidden="true"></div>
+        <ul class="breakdown-list" id="breakdownList"></ul>
+        <p class="breakdown-empty" id="breakdownEmpty">本月还没有这类记录</p>
+      </section>
+
+      <section class="panel recent-panel" id="recentPanel" aria-labelledby="recentHeading" hidden>
+        <div class="panel-head">
+          <h2 id="recentHeading">再记一笔</h2>
+          <p class="panel-meta">点一下复用</p>
+        </div>
+        <div class="recent-row" id="recentRow"></div>
+      </section>
+
+      <section class="panel" aria-labelledby="listHeading">
+        <div class="panel-head">
+          <h2 id="listHeading">流水</h2>
+          <p class="panel-meta" id="listMeta">暂无记录</p>
+        </div>
+        <div class="filter-bar" id="filterBar" hidden>
+          <button type="button" class="filter-chip" id="filterChip">
+            <span id="filterChipText">筛选中</span>
+            <span aria-hidden="true">×</span>
+          </button>
+        </div>
+        <ul class="tx-list" id="txList"></ul>
+        <p class="empty" id="emptyState">还没有记账。点下方「记一笔」开始。</p>
+      </section>
+    </main>
+
+    <button type="button" class="fab" id="openAdd" aria-haspopup="dialog">
+      记一笔
+    </button>
+
+    <dialog class="sheet" id="addSheet">
+      <form method="dialog" id="txForm" class="sheet-inner">
+        <div class="sheet-grab" aria-hidden="true"></div>
+        <h2 id="sheetTitle">记一笔</h2>
+        <p class="import-hint" id="importHint" role="status" hidden></p>
+
+        <div class="type-toggle" role="group" aria-label="收支类型">
+          <button type="button" class="type-btn is-active" data-type="expense">支出</button>
+          <button type="button" class="type-btn" data-type="income">收入</button>
+        </div>
+
+        <div class="amount-block">
+          <p class="amount-label">金额</p>
+          <p class="amount-display" id="amountDisplay" aria-live="polite">0</p>
+          <input type="hidden" id="amountInput" name="amount" value="" />
+          <div class="numpad" id="numpad" role="group" aria-label="数字键盘">
+            <button type="button" data-key="1">1</button>
+            <button type="button" data-key="2">2</button>
+            <button type="button" data-key="3">3</button>
+            <button type="button" data-key="4">4</button>
+            <button type="button" data-key="5">5</button>
+            <button type="button" data-key="6">6</button>
+            <button type="button" data-key="7">7</button>
+            <button type="button" data-key="8">8</button>
+            <button type="button" data-key="9">9</button>
+            <button type="button" data-key=".">.</button>
+            <button type="button" data-key="0">0</button>
+            <button type="button" data-key="back" aria-label="删除">⌫</button>
+          </div>
+        </div>
+
+        <fieldset class="cats">
+          <legend>分类</legend>
+          <div class="cat-grid" id="catGrid"></div>
+        </fieldset>
+
+        <label class="field">
+          <span>备注</span>
+          <input id="noteInput" name="note" type="text" placeholder="可选" maxlength="40" />
+        </label>
+
+        <label class="field">
+          <span>日期</span>
+          <input id="dateInput" name="date" type="date" required />
+        </label>
+
+        <input type="hidden" id="editId" value="" />
+
+        <div class="sheet-actions">
+          <button type="button" class="secondary" id="cancelSheet">取消</button>
+          <button type="submit" class="primary" id="saveTx">保存</button>
+        </div>
+        <button type="button" class="danger hidden" id="deleteTx">删除这笔</button>
+      </form>
+    </dialog>
+
+    <dialog class="sheet tools-sheet" id="toolsSheet">
+      <div class="sheet-inner">
+        <div class="sheet-grab" aria-hidden="true"></div>
+        <h2>设置与备份</h2>
+
+        <label class="field">
+          <span id="budgetFieldLabel">本月预算（元）</span>
+          <input id="budgetInput" type="text" inputmode="decimal" placeholder="例如 5000" autocomplete="off" />
+        </label>
+        <div class="tools-actions budget-actions">
+          <button type="button" class="primary" id="saveBudget">保存预算</button>
+          <button type="button" class="secondary" id="clearBudget">清除预算</button>
+        </div>
+
+        <div class="smart-import">
+          <p class="tools-section-title">截图识别</p>
+          <p class="tools-copy">粘贴 iPhone 从支付截图中提取的文字，自动填写金额、商户和日期。</p>
+          <label class="field">
+            <span>截图文字</span>
+            <textarea id="smartImportText" rows="5" maxlength="10000" placeholder="例如：微信支付&#10;支付成功&#10;¥32.50&#10;商户名称…"></textarea>
+          </label>
+          <button type="button" class="primary" id="smartImportTrigger">识别并预览</button>
+        </div>
+
+        <p class="tools-copy">数据保存在本机浏览器。换机或清缓存前请先导出。</p>
+        <div class="tools-actions">
+          <button type="button" class="secondary" id="exportJson">导出 JSON</button>
+          <button type="button" class="secondary" id="exportCsv">导出 CSV</button>
+          <button type="button" class="primary" id="importTrigger">导入备份</button>
+          <button type="button" class="secondary" id="closeTools">关闭</button>
+        </div>
+        <input type="file" id="importFile" accept=".json,.csv,application/json,text/csv" hidden />
+        <p class="tools-status" id="toolsStatus" role="status"></p>
+      </div>
+    </dialog>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
