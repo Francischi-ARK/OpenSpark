@@ -112,6 +112,7 @@
       <form method="dialog" id="txForm" class="sheet-inner">
         <div class="sheet-grab" aria-hidden="true"></div>
         <h2 id="sheetTitle">记一笔</h2>
+        <p class="import-hint" id="importHint" role="status" hidden></p>
 
         <div class="type-toggle" role="group" aria-label="收支类型">
           <button type="button" class="type-btn is-active" data-type="expense">支出</button>
@@ -177,6 +178,16 @@
           <button type="button" class="secondary" id="clearBudget">清除预算</button>
         </div>
 
+        <div class="smart-import">
+          <p class="tools-section-title">截图识别</p>
+          <p class="tools-copy">粘贴 iPhone 从支付截图中提取的文字，自动填写金额、商户和日期。</p>
+          <label class="field">
+            <span>截图文字</span>
+            <textarea id="smartImportText" rows="5" maxlength="10000" placeholder="例如：微信支付&#10;支付成功&#10;¥32.50&#10;商户名称…"></textarea>
+          </label>
+          <button type="button" class="primary" id="smartImportTrigger">识别并预览</button>
+        </div>
+
         <p class="tools-copy">数据保存在本机浏览器。换机或清缓存前请先导出。</p>
         <div class="tools-actions">
           <button type="button" class="secondary" id="exportJson">导出 JSON</button>
@@ -189,6 +200,6 @@
       </div>
     </dialog>
 
-    <script src="./app.js"></script>
+    <script type="module" src="./app.js"></script>
   </body>
 </html>

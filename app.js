@@ -1,3 +1,5 @@
+import { parseTransactionText } from "./transaction-parser.mjs";
+
 (() => {
   const STORAGE_KEY = "openspark-ledger-v1";
   const PREFS_KEY = "openspark-ledger-prefs-v1";
@@ -89,6 +91,7 @@
     cancelSheet: document.getElementById("cancelSheet"),
     deleteTx: document.getElementById("deleteTx"),
     saveTx: document.getElementById("saveTx"),
+    importHint: document.getElementById("importHint"),
     typeBtns: [...document.querySelectorAll(".type-btn")],
     openTools: document.getElementById("openTools"),
     toolsSheet: document.getElementById("toolsSheet"),
@@ -97,6 +100,8 @@
     exportCsv: document.getElementById("exportCsv"),
     importTrigger: document.getElementById("importTrigger"),
     importFile: document.getElementById("importFile"),
+    smartImportText: document.getElementById("smartImportText"),
+    smartImportTrigger: document.getElementById("smartImportTrigger"),
     toolsStatus: document.getElementById("toolsStatus"),
   };
 
@@ -123,6 +128,7 @@
     breakdownKind: "expense",
     filterType: null,
     filterCategoryId: null,
+    pendingImport: null,
   };
 
   state.categoryId = preferredCategory(state.type);
@@ -544,8 +550,11 @@
   }
 
   function resetForm() {
+    state.pendingImport = null;
     els.editId.value = "";
     els.sheetTitle.textContent = "记一笔";
+    els.importHint.hidden = true;
+    els.importHint.textContent = "";
     setAmountRaw("");
     els.noteInput.value = "";
     els.dateInput.value = todayISO();
@@ -560,6 +569,8 @@
   }
 
   function openReuse(record) {
+    state.pendingImport = null;
+    els.importHint.hidden = true;
     els.editId.value = "";
     els.sheetTitle.textContent = "再记一笔";
     setAmountRaw(String(record.amount));
@@ -575,6 +586,8 @@
   function openEdit(id) {
     const record = state.records.find((r) => r.id === id);
     if (!record) return;
+    state.pendingImport = null;
+    els.importHint.hidden = true;
     els.editId.value = record.id;
     els.sheetTitle.textContent = "编辑";
     setAmountRaw(String(record.amount));
@@ -589,6 +602,7 @@
 
   function closeSheet() {
     closeDialog(els.addSheet);
+    state.pendingImport = null;
   }
 
   function uid() {
@@ -616,6 +630,14 @@
       date: els.dateInput.value,
     };
 
+    if (
+      state.pendingImport &&
+      state.records.some((record) => record.importFingerprint === state.pendingImport.importFingerprint)
+    ) {
+      window.alert("这笔流水已经导入过了");
+      return;
+    }
+
     const editId = els.editId.value;
     if (editId) {
       const idx = state.records.findIndex((r) => r.id === editId);
@@ -630,6 +652,14 @@
       state.records.push({
         id: uid(),
         ...payload,
+        ...(state.pendingImport
+          ? {
+              source: state.pendingImport.source,
+              occurredAt: state.pendingImport.occurredAt,
+              externalId: state.pendingImport.externalId,
+              importFingerprint: state.pendingImport.importFingerprint,
+            }
+          : {}),
         createdAt: Date.now(),
         updatedAt: Date.now(),
       });
@@ -732,7 +762,20 @@
   }
 
   function exportCsv() {
-    const header = ["id", "type", "amount", "categoryId", "note", "date", "createdAt", "updatedAt"];
+    const header = [
+      "id",
+      "type",
+      "amount",
+      "categoryId",
+      "note",
+      "date",
+      "source",
+      "occurredAt",
+      "externalId",
+      "importFingerprint",
+      "createdAt",
+      "updatedAt",
+    ];
     const lines = [header.join(",")];
     for (const r of state.records) {
       lines.push(
@@ -743,6 +786,10 @@
           r.categoryId,
           r.note || "",
           r.date,
+          r.source || "",
+          r.occurredAt || "",
+          r.externalId || "",
+          r.importFingerprint || "",
           r.createdAt || "",
           r.updatedAt || "",
         ]
@@ -774,6 +821,10 @@
       categoryId: validCat,
       note: String(raw.note || "").slice(0, 40),
       date,
+      source: String(raw.source || "").slice(0, 20),
+      occurredAt: String(raw.occurredAt || "").slice(0, 30),
+      externalId: String(raw.externalId || "").slice(0, 80),
+      importFingerprint: String(raw.importFingerprint || "").slice(0, 80),
       createdAt: Number(raw.createdAt) || Date.now(),
       updatedAt: Number(raw.updatedAt) || Date.now(),
     };
@@ -843,6 +894,10 @@
           categoryId: cols[idx("categoryId")],
           note: cols[idx("note")],
           date: cols[idx("date")],
+          source: cols[idx("source")],
+          occurredAt: cols[idx("occurredAt")],
+          externalId: cols[idx("externalId")],
+          importFingerprint: cols[idx("importFingerprint")],
           createdAt: cols[idx("createdAt")],
           updatedAt: cols[idx("updatedAt")],
         })
@@ -894,6 +949,63 @@
     }
   }
 
+  function sourceLabel(source) {
+    return { wechat: "微信", alipay: "支付宝", bank: "银行" }[source] || "截图";
+  }
+
+  function openParsedImport(parsed) {
+    if (
+      state.records.some((record) => record.importFingerprint === parsed.importFingerprint)
+    ) {
+      window.alert("这笔流水已经导入过了");
+      return false;
+    }
+
+    resetForm();
+    state.pendingImport = parsed;
+    state.categoryId = parsed.categoryId;
+    setType(parsed.type, { keepCategory: true });
+    setAmountRaw(String(parsed.amount));
+    els.noteInput.value = parsed.note;
+    els.dateInput.value = parsed.date;
+    els.sheetTitle.textContent = "确认识别结果";
+    els.saveTx.textContent = "确认入账";
+    els.importHint.hidden = false;
+    els.importHint.textContent = `${sourceLabel(parsed.source)}截图已识别${
+      parsed.warnings.length ? ` · ${parsed.warnings.join("，")}` : " · 请核对后入账"
+    }`;
+    openDialog(els.addSheet);
+    return true;
+  }
+
+  function importOcrText(text) {
+    try {
+      return openParsedImport(parseTransactionText(text));
+    } catch (error) {
+      window.alert(error.message || "截图文字识别失败");
+      return false;
+    }
+  }
+
+  function onSmartImport() {
+    const text = els.smartImportText.value.trim();
+    if (!text) {
+      setToolsStatus("请先粘贴截图中提取的文字", true);
+      els.smartImportText.focus();
+      return;
+    }
+    closeDialog(els.toolsSheet);
+    if (importOcrText(text)) els.smartImportText.value = "";
+  }
+
+  function importFromHash() {
+    const params = new URLSearchParams(window.location.hash.slice(1));
+    const text = params.get("import");
+    if (!text) return;
+    history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
+    importOcrText(text);
+  }
+
   els.openAdd.addEventListener("click", openAdd);
   els.cancelSheet.addEventListener("click", closeSheet);
   els.deleteTx.addEventListener("click", onDelete);
@@ -934,10 +1046,13 @@
   els.exportCsv.addEventListener("click", exportCsv);
   els.importTrigger.addEventListener("click", () => els.importFile.click());
   els.importFile.addEventListener("change", onImportFile);
+  els.smartImportTrigger.addEventListener("click", onSmartImport);
+  window.addEventListener("hashchange", importFromHash);
 
   renderAll();
   renderCategories();
   setAmountRaw("");
+  importFromHash();
 
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {

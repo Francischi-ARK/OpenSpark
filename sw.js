@@ -1,9 +1,10 @@
-const CACHE = "openspark-ledger-v5";
+const CACHE = "openspark-ledger-v6";
 const ASSETS = [
   "./",
   "./index.html",
   "./styles.css",
   "./app.js",
+  "./transaction-parser.mjs",
   "./manifest.json",
   "./icon.svg",
 ];

@@ -37,7 +37,8 @@ body {
 }
 
 button,
-input {
+input,
+textarea {
   font: inherit;
 }
 
@@ -721,7 +722,8 @@ input {
   font-weight: 500;
 }
 
-.field input {
+.field input,
+.field textarea {
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 14px;
@@ -731,9 +733,25 @@ input {
   outline: none;
 }
 
-.field input:focus {
+.field textarea {
+  min-height: 112px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.field input:focus,
+.field textarea:focus {
   border-color: rgba(15, 107, 86, 0.45);
   box-shadow: 0 0 0 3px rgba(15, 107, 86, 0.12);
+}
+
+.import-hint {
+  margin: -4px 0 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(15, 107, 86, 0.1);
+  color: var(--accent-deep);
+  font-size: 0.78rem;
 }
 
 .amount-block {
@@ -788,6 +806,21 @@ input {
   margin: 0;
   color: var(--ink-soft);
   font-size: 0.88rem;
+}
+
+.smart-import {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(15, 107, 86, 0.07);
+}
+
+.tools-section-title {
+  margin: 0;
+  color: var(--ink);
+  font-weight: 700;
 }
 
 .tools-actions {
